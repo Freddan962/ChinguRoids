@@ -1,8 +1,11 @@
 require 'chingu'
+include Gosu
 
+require_relative 'rb/beginning.rb'
+require_relative 'rb/levels.rb'
 require_relative 'rb/objects.rb'
-require_relative 'rb/gamestates.rb'
 require_relative 'rb/gui.rb'
+require_relative 'rb/ending.rb'
 
 module Zorder
 	GUI = 400
@@ -20,24 +23,52 @@ module Colors
 	Blue_Laser = Gosu::Color.new(0xFF86EFFF)
 end
 
-class Game < Chingu::Window
-	attr_reader :WIDTH, :HEIGHT, :NAME
 
-	def initialize
-		@WIDTH, @HEIGHT, @NAME = 800, 600, "ChinguRoids 0.01 - Fractional"
-		super(800, 600, false)
-		self.caption = @NAME
-		self.input = { :escape => :exit}
+#
+#  GameWindow Class
+#
+class GameWindow < Chingu::Window
+  def initialize
+    super(800,600,false)
+    $intro = true
+    $max_x = 815
+    $max_y = 615
+    $scr_edge = 15
+    $cooling_down = 70
+    $star_grab = Sound["media/audio/star_pickup.ogg"]
+    $power_up = Sound["media/audio/power_up.ogg"]
+    self.caption = "ChinguRoids"
+    @cursor = true # comment out to hide cursor
+    self.input = { :esc => :exit,
+#                   :enter => :next,
+#                   :return => :next,
+                 [:q, :l] => :pop,
+                 :z => :log,
+                 :r => lambda{current_game_state.setup}
+               }
+    retrofy
+  end
 
-		@gamestates = [Level_1, Introduction]
-		game_state_next
-	end
+  def setup
+    push_game_state(Beginning)
+  end
 
-	def game_state_next
-		for i in 0..@gamestates.size
-			push_game_state(@gamestates[i])
-		end
-	end
+  def log
+    puts $window.current_game_state
+  end
+
+  def next
+    push_game_state(Beginning)
+  end
+
+  def pop
+    if $window.current_game_state.to_s == "Introduction" or $window.current_game_state.to_s == "Level_1" then
+      pop_game_state(:setup => true)
+    elsif $window.current_game_state.to_s != "OpeningCredits"
+      pop_game_state(:setup => false)
+    end
+  end
 end
 
-Game.new.show
+
+GameWindow.new.show # change to Game.new.show to see alternate window class
